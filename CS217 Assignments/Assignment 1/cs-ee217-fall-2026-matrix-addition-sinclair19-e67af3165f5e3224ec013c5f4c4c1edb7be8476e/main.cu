@@ -60,6 +60,9 @@ int main (int argc, char *argv[])
     /*************************************************************************/
     //INSERT CODE HERE
     // Wrap CUDA API calls in CHECK(...) here and below, e.g. CHECK(cudaMalloc(...));
+    CHECK(cudaMalloc((void**)&A_d, sizeof(float) * mat_sz));
+    CHECK(cudaMalloc((void**)&B_d, sizeof(float) * mat_sz));
+    CHECK(cudaMalloc((void**)&C_d, sizeof(float) * mat_sz));
 
     /*************************************************************************/
     CHECK(cudaDeviceSynchronize());
@@ -71,6 +74,8 @@ int main (int argc, char *argv[])
 	
     /*************************************************************************/
     //INSERT CODE HERE
+    CHECK(cudaMemcpy(A_d, A_h, sizeof(float) * mat_sz, cudaMemcpyHostToDevice));
+    CHECK(cudaMemcpy(B_d, B_h, sizeof(float) * mat_sz, cudaMemcpyHostToDevice));
 
     /*************************************************************************/
     CHECK(cudaDeviceSynchronize());
@@ -90,6 +95,7 @@ int main (int argc, char *argv[])
 
     /*************************************************************************/
     //INSERT CODE HERE
+    CHECK(cudaMemcpy(C_h, C_d, sizeof(float) * mat_sz, cudaMemcpyDeviceToHost));
 
     /*************************************************************************/
     CHECK(cudaDeviceSynchronize());
@@ -110,6 +116,9 @@ int main (int argc, char *argv[])
 
     /*************************************************************************/
     //INSERT CODE HERE
+    CHECK(cudaFree(A_d));
+    CHECK(cudaFree(B_d));
+    CHECK(cudaFree(C_d));
     
     /*************************************************************************/
     return 0;

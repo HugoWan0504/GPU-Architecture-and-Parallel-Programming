@@ -27,7 +27,14 @@ __global__ void matAdd(int rows, int cols, const float *A, const float *B, float
 
     /*************************************************************************/
     // INSERT KERNEL CODE HERE
-        
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (row < rows && col < cols) {
+        size_t idx = (size_t)row * cols + col;
+        C[idx] = A[idx] + B[idx];
+    }
+
     /*************************************************************************/
 
 }
@@ -42,6 +49,12 @@ void basicMatAdd(int rows, int cols, const float *A, const float *B, float *C)
 	
     /*************************************************************************/
     //INSERT CODE HERE
+    dim3 block(BLOCK_X, BLOCK_Y);
+
+    dim3 grid(
+        (cols + BLOCK_X - 1) / BLOCK_X,
+        (rows + BLOCK_Y - 1) / BLOCK_Y
+    );
 
     /*************************************************************************/
 	
@@ -49,6 +62,7 @@ void basicMatAdd(int rows, int cols, const float *A, const float *B, float *C)
 
     /*************************************************************************/
     //INSERT CODE HERE
+    matAdd<<<grid, block>>>(rows, cols, A, B, C);
 
     /*************************************************************************/
 
