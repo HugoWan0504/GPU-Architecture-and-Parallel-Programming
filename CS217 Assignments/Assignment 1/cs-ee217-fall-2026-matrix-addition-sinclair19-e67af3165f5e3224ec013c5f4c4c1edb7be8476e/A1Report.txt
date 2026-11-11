@@ -1,0 +1,56 @@
+# A1 Matrix Addition Report
+
+## Q1. Grid and Block Dimensions
+
+```
+Blocks in x = ceil(1023 / 16) = 64
+Blocks in y = ceil(4097 / 16) = 257
+
+Total threads = 64 × 257 × 256 = 4,210,688
+Valid elements = 4097 × 1023    = 4,191,231
+Threads doing no work         = 19,457
+```
+
+## Q2. Kernel time vs matrix size
+
+I measured seven square matrix sizes using 16 x 16 thread blocks
+on a Tesla T4 GPU. Each size was tested five times, and I reported
+the median time.
+
+```
+Matrix size    Elements      Data moved (MB)    Time (ms)
+16 x 16      256         0.003072         0.118
+64 x 64      4096         0.049152        0.114
+256 x 256     65536        0.786432         0.124
+1024 x 1024    1048576       12.582912        0.182
+4096 x 4096    16777216      201.326592        1.001
+8192 x 8192    67108864      805.306368        3.396
+16384 x 16384   268435456     3221.225472        13.047
+```
+
+Each output element requires reading one float from A, reading
+one float from B, and writing one float to C. Each float is
+4 bytes, so the kernel moves:
+
+Data moved = N² x (4 + 4 + 4) = 12N² bytes.
+
+Here, 1 MB = 1,000,000 bytes. This counts GPU-memory reads and
+writes, excluding transfers between the CPU and GPU.
+
+For large matrices, time grows approximately in proportion to
+the number of elements and the amount of data moved. Increasing
+N from 8192 to 16384 quadruples the data, while measured time
+increases by about 3.84 times. This is consistent with memory
+bandwidth becoming the main performance limit.
+
+Small matrices take approximately 0.11–0.12 ms despite having
+different numbers of elements. For these sizes, fixed launch
+and synchronization overhead contributes much of the reported
+time. Timing variability can also explain why 64 x 64 is
+slightly faster than 16 x 16.
+
+The provided timer measures the kernel launch and synchronization,
+rather than only GPU execution time. The largest matrix tested
+was 16384 x 16384; this was not established as the memory limit.
+
+
