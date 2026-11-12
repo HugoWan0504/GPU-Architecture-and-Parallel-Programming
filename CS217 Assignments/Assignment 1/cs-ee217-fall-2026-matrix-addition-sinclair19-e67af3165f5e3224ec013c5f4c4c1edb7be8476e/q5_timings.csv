@@ -1,0 +1,6 @@
+Block shape,Threads per block,Kernel time (ms),Correctness
+256 x 1,256,0.911,PASSED
+32 x 8,256,0.896,PASSED
+16 x 16,256,0.924,PASSED
+8 x 32,256,0.937,PASSED
+1 x 256,256,5.796,PASSED
