@@ -190,11 +190,11 @@ run five times, and I recorded the median reported kernel time.
 
 ```
 Block shape   Threads per block   Kernel time (ms)   Correctness
-256 x 1         256          0.911        PASSED
-32 x 8         256          0.896        PASSED
-16 x 16         256          0.924        PASSED
-8 x 32         256          0.937        PASSED
-1 x 256         256          5.796        PASSED
+256 x 1       256                 0.911              PASSED
+32 x 8        256                 0.896              PASSED
+16 x 16       256                 0.924              PASSED
+8 x 32        256                 0.937              PASSED
+1 x 256       256                 5.796              PASSED        PASSED
 ```
 
 The 32 x 8 shape had the lowest median time, while 1 x 256
