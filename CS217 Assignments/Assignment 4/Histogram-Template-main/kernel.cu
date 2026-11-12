@@ -9,7 +9,11 @@ __global__ void basic_histo_kernel(unsigned int* input, unsigned int* bins, unsi
     /*************************************************************************/
     // INSERT KERNEL CODE HERE
     // BASIC HISTOGRAM IMPLEMENTATION
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
 
+    if (i < num_elements) {
+        atomicAdd(&bins[input[i]], 1u);
+    }
 
     /*************************************************************************/
 }
@@ -22,7 +26,28 @@ __global__ void privatized_histo_kernel(unsigned int* input, unsigned int* bins,
     /*************************************************************************/
     // INSERT KERNEL CODE HERE
     // PRIVATIZED HISTOGRAM IMPLEMENTATION
+    extern __shared__ unsigned int hist_s[];
 
+    // Phase 1: initialize every bin in this block's private histogram
+    for (unsigned int bin = threadIdx.x; bin < num_bins; bin += blockDim.x) {
+        hist_s[bin] = 0;
+    }
+
+    __syncthreads();
+
+    // Phase 2: count this block's input elements into shared memory
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (i < num_elements) {
+        atomicAdd(&hist_s[input[i]], 1u);
+    }
+
+    __syncthreads();
+
+    // Phase 3: merge every private bin into the global histogram
+    for (unsigned int bin = threadIdx.x; bin < num_bins; bin += blockDim.x) {
+        atomicAdd(&bins[bin], hist_s[bin]);
+    }
 
     /*************************************************************************/
 }
@@ -32,7 +57,9 @@ void basicHistogram(unsigned int* input, unsigned int* bins, unsigned int num_el
 
     /*************************************************************************/
     //INSERT CODE HERE
+    unsigned int num_blocks = (num_elements + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
+    basic_histo_kernel<<<num_blocks, BLOCK_SIZE>>>(input, bins, num_elements, num_bins);
 
     /*************************************************************************/
 
@@ -43,7 +70,9 @@ void privatizedHistogram(unsigned int* input, unsigned int* bins, unsigned int n
 
     /*************************************************************************/
     //INSERT CODE HERE
+    unsigned int num_blocks = (num_elements + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
+    privatized_histo_kernel<<<num_blocks, BLOCK_SIZE, num_bins * sizeof(unsigned int)>>>(input, bins, num_elements, num_bins);
 
     /*************************************************************************/
 
