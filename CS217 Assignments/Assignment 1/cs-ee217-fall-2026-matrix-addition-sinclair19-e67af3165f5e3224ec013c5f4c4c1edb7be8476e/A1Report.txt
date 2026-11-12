@@ -143,11 +143,13 @@ I tested a 4096 x 4096 matrix with four block sizes.
 Each configuration was run five times, and I recorded
 the median reported kernel time.
 
+```
 Block size   Threads per block   Kernel time (ms)
-4 x 4        16                  2.527
-8 x 8        64                  0.941
-16 x 16      256                 0.943
-32 x 32      1024                0.930
+4 x 4         16           2.527
+8 x 8         64           0.941
+16 x 16        256           0.943
+32 x 32        1024          0.930
+```
 
 The 4 x 4 configuration was approximately 2.7 times slower
 than the other configurations.
@@ -171,10 +173,63 @@ overhead, which can obscure small performance differences.
 For make TILE=64, compilation succeeded, but execution failed
 at the kernel launch with:
 
-CUDA error: invalid argument
+- CUDA error: invalid argument
 
 A 64 x 64 block requests 4096 threads, exceeding the GPU's
 1024-thread-per-block limit. Therefore, this launch is invalid.
 
 After the experiment, I ran plain make to restore the
 default 16 x 16 block configuration.
+
+
+## Q5. Block Shape and Memory Access
+
+I tested a 4096 x 4096 matrix with five block shapes.
+Each block contained 256 threads. Each configuration was
+run five times, and I recorded the median reported kernel time.
+
+```
+Block shape   Threads per block   Kernel time (ms)   Correctness
+256 x 1         256          0.911        PASSED
+32 x 8         256          0.896        PASSED
+16 x 16         256          0.924        PASSED
+8 x 32         256          0.937        PASSED
+1 x 256         256          5.796        PASSED
+```
+
+The 32 x 8 shape had the lowest median time, while 1 x 256
+was approximately 6.47 times slower. The first four shapes
+performed similarly, so their small timing differences
+should not be treated as a definitive ranking.
+
+The matrices use row-major storage: adjacent columns are
+adjacent in memory. The kernel maps the x coordinate to
+columns and the y coordinate to rows. Within a block,
+thread indices advance along x first.
+
+For each 32-thread warp:
+
+- 256 x 1: accesses 32 adjacent columns in one row.
+- 32 x 8: accesses 32 adjacent columns in one row.
+- 16 x 16: accesses 16 adjacent columns in each of two rows.
+- 8 x 32: accesses 8 adjacent columns in each of four rows.
+- 1 x 256: accesses one column across 32 different rows.
+
+The first four shapes access contiguous groups of elements,
+allowing efficient memory transactions. In particular,
+8 adjacent floats occupy 32 bytes, so the 8 x 32 shape
+can still use memory transactions efficiently when aligned.
+
+For 1 x 256, neighboring warp threads access different rows.
+With 4096 columns, these addresses are 4096 floats, or
+16384 bytes, apart. These scattered accesses require many
+more memory transactions for the same useful data, explaining
+the much longer execution time.
+
+All five shapes produced correct results in every measured
+run. Changing block shape changes memory-access efficiency,
+but the indexing and bounds check still ensure that each
+valid output element is computed correctly.
+
+The experiment restored the default 16 x 16 blocks afterward.
+
