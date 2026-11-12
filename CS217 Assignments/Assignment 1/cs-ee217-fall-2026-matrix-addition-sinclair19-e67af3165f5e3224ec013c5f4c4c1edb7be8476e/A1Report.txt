@@ -11,6 +11,7 @@ Valid elements = 4097 × 1023    = 4,191,231
 Threads doing no work         = 19,457
 ```
 
+
 ## Q2. Kernel time vs matrix size
 
 I measured seven square matrix sizes using 16 x 16 thread blocks
@@ -54,3 +55,83 @@ rather than only GPU execution time. The largest matrix tested
 was 16384 x 16384; this was not established as the memory limit.
 
 
+## Q3. Data Transfer vs Computation
+
+Each square matrix size was tested five times. The table reports
+the median time for each stage, in milliseconds.
+
+```
+N    Host to device    Kernel    Device to host    Total
+16      0.031       0.114       0.016       0.161
+64      0.048       0.104       0.029       0.181
+256      0.233      0.106       0.216        0.555
+1024     2.172       0.182       4.936       7.290
+4096     29.331      0.933       59.786       90.050
+8192     118.035      3.407      258.308       379.750
+16384    470.938      13.176      848.399       1332.513
+```
+
+Total is the sum of these three stage medians. It excludes
+memory allocation, initialization, and verification.
+
+1. Kernel percentage for the largest matrix
+
+For the 16384 x 16384 matrix:
+
+Kernel percentage = 13.176 / 1332.513 x 100 = 0.99%
+
+The two transfers account for approximately 99.01% of the
+combined time. Thus, data movement dominates this workload.
+
+2. Data moved and comparison with the kernel
+
+Copying A and B from the CPU to the GPU moves:
+2 x N² x 4 = 8N² bytes.
+
+Copying C from the GPU to the CPU moves:
+N² x 4 = 4N² bytes.
+
+The two copies together move 12N² bytes. For N = 16384:
+
+12 x 16384² = 3,221,225,472 bytes = 3221.225472 MB.
+
+Here, 1 MB = 1,000,000 bytes.
+
+This equals the kernel's logical data movement in Q2:
+reading A, reading B, and writing C.
+
+However, the data travels along different paths. The copies
+cross the CPU–GPU connection, while the kernel reads and
+writes GPU memory locally. GPU memory has much higher bandwidth.
+
+The combined transfer time is:
+
+470.938 + 848.399 = 1319.337 ms.
+
+This is approximately 100.13 times the kernel-stage time of
+13.176 ms. Copy timings can also include host-memory staging
+and other overhead, so equal byte counts do not imply equal
+execution times.
+
+3. Running the kernel 100 times before copying C back
+
+Assume A and B are copied to the GPU once, the kernel runs
+100 times, and C is copied back once. Also assume each launch
+takes the same measured kernel time.
+
+Combined kernel time = 100 x 13.176 = 1317.600 ms.
+
+Total time = 470.938 + 1317.600 + 848.399 = 2636.937 ms.
+
+Kernel percentage = 1317.600 / 2636.937 x 100 = 49.97%.
+
+The kernel's share increases from 0.99% to 49.97% because the
+same transfer cost is spread over more computation.
+
+This suggests that GPU execution is more beneficial when data
+stays on the GPU and is reused for substantial computation.
+A CPU baseline is still needed to establish actual speedup.
+
+The 100-launch result is an estimate. Repeated launches may
+differ from the measured first launch, whose reported time
+includes launch and synchronization overhead.
