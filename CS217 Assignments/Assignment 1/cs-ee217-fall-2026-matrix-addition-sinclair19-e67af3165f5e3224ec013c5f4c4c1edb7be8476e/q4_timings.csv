@@ -1,0 +1,5 @@
+Block size,Threads per block,Kernel time (ms)
+4 x 4,16,2.527
+8 x 8,64,0.941
+16 x 16,256,0.9430000000000001
+32 x 32,1024,0.93

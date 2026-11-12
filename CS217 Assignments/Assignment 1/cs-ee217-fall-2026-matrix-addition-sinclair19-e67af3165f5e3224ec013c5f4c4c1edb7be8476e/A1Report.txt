@@ -135,3 +135,46 @@ A CPU baseline is still needed to establish actual speedup.
 The 100-launch result is an estimate. Repeated launches may
 differ from the measured first launch, whose reported time
 includes launch and synchronization overhead.
+
+
+## Q4. Block Size
+
+I tested a 4096 x 4096 matrix with four block sizes.
+Each configuration was run five times, and I recorded
+the median reported kernel time.
+
+Block size   Threads per block   Kernel time (ms)
+4 x 4        16                  2.527
+8 x 8        64                  0.941
+16 x 16      256                 0.943
+32 x 32      1024                0.930
+
+The 4 x 4 configuration was approximately 2.7 times slower
+than the other configurations.
+
+A warp contains 32 threads. A 4 x 4 block contains only
+16 threads, so it occupies a warp with half its lanes unused.
+It also requires many more blocks to cover the matrix,
+increasing block scheduling overhead. These factors help
+explain its lower performance.
+
+The other configurations contain whole multiples of 32
+threads and achieve similar measured times. Although
+32 x 32 had the lowest median, its advantage was small
+and may reflect timing variability.
+
+Larger blocks do not necessarily keep improving performance.
+Memory bandwidth and resource limits also affect execution.
+The reported timing includes launch and synchronization
+overhead, which can obscure small performance differences.
+
+For make TILE=64, compilation succeeded, but execution failed
+at the kernel launch with:
+
+CUDA error: invalid argument
+
+A 64 x 64 block requests 4096 threads, exceeding the GPU's
+1024-thread-per-block limit. Therefore, this launch is invalid.
+
+After the experiment, I ran plain make to restore the
+default 16 x 16 block configuration.
