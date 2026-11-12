@@ -8,7 +8,7 @@ Blocks in y = ceil(4097 / 16) = 257
 
 Total threads = 64 × 257 × 256 = 4,210,688
 Valid elements = 4097 × 1023    = 4,191,231
-Threads doing no work         = 19,457
+Threads doing no work          = 19,457
 ```
 
 
@@ -19,13 +19,13 @@ on a Tesla T4 GPU. Each size was tested five times, and I reported
 the median time.
 
 ```
-Matrix size    Elements      Data moved (MB)    Time (ms)
-16 x 16      256         0.003072         0.118
-64 x 64      4096         0.049152        0.114
-256 x 256     65536        0.786432         0.124
-1024 x 1024    1048576       12.582912        0.182
-4096 x 4096    16777216      201.326592        1.001
-8192 x 8192    67108864      805.306368        3.396
+Matrix size     Elements      Data moved (MB)    Time (ms)
+16 x 16         256           0.003072           0.118
+64 x 64         4096          0.049152           0.114
+256 x 256       65536         0.786432           0.124
+1024 x 1024     1048576       12.582912          0.182
+4096 x 4096     16777216      201.326592         1.001
+8192 x 8192     67108864      805.306368         3.396
 16384 x 16384   268435456     3221.225472        13.047
 ```
 
@@ -61,14 +61,14 @@ Each square matrix size was tested five times. The table reports
 the median time for each stage, in milliseconds.
 
 ```
-N    Host to device    Kernel    Device to host    Total
-16      0.031       0.114       0.016       0.161
-64      0.048       0.104       0.029       0.181
-256      0.233      0.106       0.216        0.555
-1024     2.172       0.182       4.936       7.290
-4096     29.331      0.933       59.786       90.050
-8192     118.035      3.407      258.308       379.750
-16384    470.938      13.176      848.399       1332.513
+N       Host to device   Kernel    Device to host   Total
+16      0.031            0.114     0.016            0.161
+64      0.048            0.104     0.029            0.181
+256     0.233            0.106     0.216            0.555
+1024    2.172            0.182     4.936            7.290
+4096    29.331           0.933     59.786           90.050
+8192    118.035          3.407     258.308          379.750
+16384   470.938          13.176    848.399          1332.513
 ```
 
 Total is the sum of these three stage medians. It excludes
@@ -145,10 +145,10 @@ the median reported kernel time.
 
 ```
 Block size   Threads per block   Kernel time (ms)
-4 x 4         16           2.527
-8 x 8         64           0.941
-16 x 16        256           0.943
-32 x 32        1024          0.930
+4 x 4        16                  2.527
+8 x 8        64                  0.941
+16 x 16      256                 0.943
+32 x 32      1024                0.930
 ```
 
 The 4 x 4 configuration was approximately 2.7 times slower
@@ -194,7 +194,7 @@ Block shape   Threads per block   Kernel time (ms)   Correctness
 32 x 8        256                 0.896              PASSED
 16 x 16       256                 0.924              PASSED
 8 x 32        256                 0.937              PASSED
-1 x 256       256                 5.796              PASSED        PASSED
+1 x 256       256                 5.796              PASSED
 ```
 
 The 32 x 8 shape had the lowest median time, while 1 x 256
