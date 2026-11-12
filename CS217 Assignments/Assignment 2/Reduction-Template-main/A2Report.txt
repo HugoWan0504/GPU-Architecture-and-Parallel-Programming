@@ -1,0 +1,49 @@
+# A2 Reduction Report
+
+## Q1 Naive reduction and divergence
+
+### Q1.1
+
+**Answer: 1 step without warp divergence.**
+
+At stride = 1, all 1024 threads participate in the reduction, so all 32 threads within each warp are active.
+
+### Q1.2
+
+**Answer: 10 steps with warp divergence.**
+
+The reduction requires log₂(2048) = 11 steps. Starting at stride = 2, the condition `tid % stride == 0` causes active and inactive threads to become interleaved within warps, introducing warp divergence for the remaining 10 steps.
+
+
+## Q2 Optimized reduction and divergence
+
+### Q2.1
+
+**Answer: 6 steps without warp divergence.**
+
+For strides 1024, 512, 256, 128, 64, and 32, active threads remain contiguous and occupy complete warps of 32 threads. Therefore, these 6 steps execute without warp divergence.
+
+### Q2.2
+
+**Answer: 5 steps with warp divergence.**
+
+Starting at stride = 16, fewer than 32 threads participate within the remaining active warp. Consequently, strides 16, 8, 4, 2, and 1 introduce warp divergence, resulting in 5 divergent steps.
+
+
+## Q3. Number of Steps
+
+**Answer: 10 reduction steps per block, across 500 blocks.**
+
+With 512 threads per block and 2 elements processed per thread, each block handles 1024 elements.
+
+- Number of blocks = 512000 / 1024 = 500
+- Reduction steps per block = log₂(1024) = 10
+
+Each block independently performs 10 reduction steps and writes one partial sum to the output array.
+
+Therefore, the algorithm requires **10 reduction stages**, with 500 blocks performing a total of 5000 block-level reduction steps. No additional reduction stage is needed because the assignment only requires partial sums.
+
+
+
+
+
