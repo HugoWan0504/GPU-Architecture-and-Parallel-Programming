@@ -27,6 +27,55 @@ __global__ void mysgemm(int m, int n, int k, const float *A, const float *B, flo
 
     /*************************************************************************/
     // INSERT KERNEL CODE HERE
+    // Choose a tile depth that supports square and rectangular blocks.
+    const int TILE_K = (TILE_X < TILE_Y) ? TILE_X : TILE_Y;
+
+    __shared__ float tileA[TILE_Y][TILE_K];
+    __shared__ float tileB[TILE_K][TILE_X];
+
+    const int tx = threadIdx.x;
+    const int ty = threadIdx.y;
+
+    const int row = blockIdx.y * blockDim.y + ty;
+    const int col = blockIdx.x * blockDim.x + tx;
+
+    float sum = 0.0f;
+
+    for (int start = 0; start < k; start += TILE_K) {
+
+        // Load an A tile: TILE_Y rows by TILE_K columns.
+        if (tx < TILE_K) {
+            const int aCol = start + tx;
+
+            tileA[ty][tx] = (row < m && aCol < k)
+                        ? A[row * k + aCol]
+                        : 0.0f;
+        }
+
+        // Load a B tile: TILE_K rows by TILE_X columns.
+        if (ty < TILE_K) {
+            const int bRow = start + ty;
+
+            tileB[ty][tx] = (bRow < k && col < n)
+                        ? B[bRow * n + col]
+                        : 0.0f;
+        }
+
+        // Wait until both shared-memory tiles are ready.
+        __syncthreads();
+
+        for (int p = 0; p < TILE_K; p++) {
+            sum += tileA[ty][p] * tileB[p][tx];
+        }
+
+        // Wait until everyone finishes reading before replacing the tiles.
+        __syncthreads();
+    }
+
+    // Only threads within the output matrix write a result.
+    if (row < m && col < n) {
+        C[row * n + col] = sum;
+    }
         
     /*************************************************************************/
 }
@@ -41,6 +90,12 @@ void basicSgemm(int m, int n, int k, const float *A, const float *B, float *C)
 	
     /*************************************************************************/
     //INSERT CODE HERE
+    dim3 block(BLOCK_X, BLOCK_Y);
+
+    dim3 grid(
+        (n + BLOCK_X - 1) / BLOCK_X,
+        (m + BLOCK_Y - 1) / BLOCK_Y
+    );
 
     /*************************************************************************/
 
@@ -48,6 +103,7 @@ void basicSgemm(int m, int n, int k, const float *A, const float *B, float *C)
 
     /*************************************************************************/
     //INSERT CODE HERE
+    mysgemm<<<grid, block>>>(m, n, k, A, B, C);
 
     /*************************************************************************/
 
