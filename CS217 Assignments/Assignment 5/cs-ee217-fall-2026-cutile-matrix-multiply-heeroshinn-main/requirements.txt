@@ -1,0 +1,5 @@
+# Python packages for the cuTile assignment (needs Python 3.11 or newer for cuda-tile 1.8)
+# python3.12 -m venv ~/cutile-venv && ~/cutile-venv/bin/pip install --no-cache-dir -r requirements.txt
+cuda-tile>=1.8
+cupy-cuda13x
+numpy
